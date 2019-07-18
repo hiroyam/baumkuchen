@@ -11,14 +11,16 @@ def empty(df, value='@'):
     # 100% nan のカラムをリストアップする
     c = df.loc[:, df.isnull().sum()==len(df)].columns
 
-    # 100% nan のカラムを@で埋める
-    df[c] = df[c].fillna(value)
+    df = df.drop(columns=c)
+
+#     # 100% nan のカラムを@で埋める
+#     df[c] = df[c].fillna(value)
 
     return df
 
 
 # カテゴリ型のカラムを上位thresholdカテゴリのみ残して @MINORITY で埋め、nanは @FILLED で埋める
-def categorical(df, mask=None, threshold=3, value='@', minority='@.MINORITY'):
+def categorical(df, mask=None, threshold=2, value='@.FILLED', minority='@.MINORITY'):
 
     df = df.copy()
 
@@ -31,31 +33,39 @@ def categorical(df, mask=None, threshold=3, value='@', minority='@.MINORITY'):
     # カテゴリ型のカラムに関して上位thresholdカテゴリのみ残してそれ以外の値を@MINORにする
     df[c] = df[c].apply(lambda x: x.mask(~x.isnull() & ~x.isin(x.value_counts().index[:threshold]), minority)).fillna(value)
 
-    # カテゴリ型のカラムを@で埋める
-    df[c] = df[c]
-
     return df
 
 # 数値型のカラムを平均値で埋め、埋めた場所がわかるように新たなカラムを追加する
-def numerical(df, mask=None):
+def numerical(df, mask=None, marker=False):
 
     df = df.copy()
 
     # 数値型のカラムをリストアップする
     c = df.select_dtypes(include=[np.number]).columns
 
-    for v in c:
-        # 列のソート（最後尾に）
-        df = df.loc[:, df.columns.drop(v).append(pd.Index([v]))]
+    # マスクする
+    c = c ^ (c & {mask})
 
-        # 埋めた場所がわかるように新たなカラムを追加する。
-        df.loc[:, '%s@'%v] = df.loc[:, v].isnull()
+    if marker == True:
+        for v in c:
+            # 列のソート（最後尾に）
+            df = df.loc[:, df.columns.drop(v).append(pd.Index([v]))]
+
+            # 埋めた場所がわかるように新たなカラムを追加する。
+            df.loc[:, '%s@'%v] = df.loc[:, v].isnull()
 
     # 平均値で埋める
     df[c] = df[c].fillna(df[c].mean())
 
     return df
 
+# 上の処理を全部やる
+def full(df, mask=None, marker=False, threshold=2, value='@', minority='.'):
+
+    df = df.copy()
+
+
+    return df
 
 if __name__ == '__main__':
     df = pd.DataFrame([
@@ -74,6 +84,7 @@ if __name__ == '__main__':
 
     print(df)
     print(empty(df))
-    print(categorical(df, 'd'))
-    print(numerical(df))
+#     print(categorical(df, 'd'))
+#     print(numerical(df))
+#     print(full(df))
     exit()
