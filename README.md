@@ -2,6 +2,6 @@
 
 欠損値補完ライブラリ
 
-# Usage
+## Usage
 
 pip install baumkuchen
